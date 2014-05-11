@@ -304,9 +304,11 @@
         <context id="constructor" style-ref="constructor">
             <match extended="true">
                 ((?&lt;![\p{L}\d$_]-|[\p{L}\d$_])
-                [\p{Lu}][\p{L}0-9]+
-                (?!-\p{L}|[\p{L}\d$_]) |
-                (?&lt;=new\s|class\s|extends\s)\%{identifier})
+                 [\p{Lu}][\p{L}0-9]+
+                 (?!-\p{L}|[\p{L}\d$_]) |
+                 (?&lt;=^new\s|^class\s|^extends\s|
+                  \snew\s|\sclass\s|\sextends\s)
+                 \%{identifier})
             </match>
         </context>
 
