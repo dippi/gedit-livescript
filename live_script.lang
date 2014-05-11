@@ -24,7 +24,7 @@
 <language id="livescript" _name="LiveScript" version="2.0" _section="Scripts">
     <metadata>
         <property name="mimetypes">application/livescript;text/livescript</property>
-        <property name="globs">*.ls;*.livescript</property>
+        <property name="globs">*.ls;*.live;*.livescript</property>
         <property name="line-comment-start">#</property>
         <property name="block-comment-start">/*</property>
         <property name="block-comment-end">*/</property>
@@ -34,24 +34,31 @@
         <style id="comment"         _name="Comment"                  map-to="def:comment"/>
         <style id="error"           _name="Error"                    map-to="def:error"/>
         <style id="string"          _name="String"                   map-to="def:string"/>
+        <style id="octal"           _name="Octal"                    map-to="def:error"/>
         <style id="decimal"         _name="Decimal"                  map-to="def:number"/>
         <style id="floating-point"  _name="Floating Point"           map-to="def:number"/>
         <style id="global"          _name="Global Value"             map-to="def:special-constant"/>
         <style id="constant"        _name="Constant"                 map-to="def:special-constant"/>
+        <style id="label"           _name="Label"                    map-to="def:preprocessor"/>
         <style id="boolean"         _name="Boolean value"            map-to="def:boolean"/>
         <style id="statement"       _name="Statement"                map-to="def:statement"/>
         <style id="loop"            _name="Loop"                     map-to="def:keyword"/>
         <style id="conditional"     _name="Conditional"              map-to="def:keyword"/>
         <style id="operator"        _name="Operator"                 map-to="def:keyword"/>
+        <style id="delimiter"       _name="Delimiter"                map-to="def:keyword"/>
         <style id="keyword"         _name="Keyword"                  map-to="def:keyword"/>
         <style id="interpolation"   _name="Interpolation"            map-to="def:identifier"/>
         <style id="regexp"          _name="RegExp"                   map-to="def:special-char"/>
         <style id="function"        _name="Function"                 map-to="def:function"/>
         <style id="application"     _name="Application"              map-to="def:identifier"/>
-        <style id="constructors"    _name="Constructors"             map-to="def:type"/>
+        <style id="constructor"     _name="Constructor"              map-to="def:type"/>
     </styles>
 
     <definitions>
+        <define-regex id="identifier" extended="true">
+            [\p{L}$_](-\p{L}|[\p{L}\d$_])*
+        </define-regex>
+
         <!-- Comments -->
         <context id="block-comment" style-ref="comment">
             <start>/\*</start>
@@ -75,7 +82,7 @@
 
         <!-- Interpolations -->
         <context id="simple-interpolation" style-ref="interpolation">
-            <match>#[\p{L}$_](-\p{L}|[\p{L}\d$_])*</match>
+            <match>#\%{identifier}</match>
         </context>
 
         <context id="curly-interpolation" style-ref="interpolation">
@@ -94,7 +101,7 @@
 
         <!-- Regexps -->
         <context id="regex-line-comment" style-ref="comment" extend-parent="false">
-            <start>(^|(?&lt;=\s))#(?![\p{L}{$_])</start>
+            <start>(^|(?&lt;=\s))#</start>
             <end>$</end>
             <include>
                 <context ref="def:in-comment"/>
@@ -164,6 +171,10 @@
         </context>
 
         <!-- Numbers -->
+        <context id="octal" style-ref="octal">
+            <match>(?&lt;![\p{L}\d$_])0(_?\d)+([\p{L}$][\p{L}\d$_]*|(?!\d))</match>
+        </context>
+
         <context id="float" style-ref="floating-point">
             <match extended="true">
                 (?&lt;![\p{L}\d$_])
@@ -173,7 +184,7 @@
         </context>
 
         <context id="decimal" style-ref="decimal">
-            <match>(?&lt;![\p{L}\d$_])([1-9][0-9_]*|0)[\p{L}$_]*</match>
+            <match>(?&lt;![\p{L}\d$_])([1-9][0-9_]*|0)([\p{L}$][\p{L}\d$_]*|(?!\d))</match>
         </context>
 
         <!-- Constants -->
@@ -183,6 +194,8 @@
             <keyword>void</keyword>
             <keyword>undefined</keyword>
             <keyword>null</keyword>
+            <keyword>NaN</keyword>
+            <keyword>Infinity</keyword>
         </context>
 
         <context id="constant" style-ref="constant">
@@ -226,13 +239,13 @@
 
         <define-regex id="keywords-keyword" extended="true">
             (?&lt;![\p{L}\d$_]-|[\p{L}\d$_\.])
-            (instanceof|extends|catch|finally|with)
+            (instanceof|extends|implements|catch|finally|with)
             (?!-\p{L}|[\p{L}\d$_])
         </define-regex>
 
         <define-regex id="value-keyword" extended="true">
             (?&lt;![\p{L}\d$_]-|[\p{L}\d$_])
-            (do|let|const|that|it|not|typeof!?|new|class|
+            (do|let|var|const|that|it|not|typeof!?|new|class|
              delete!?|super|try|require!?|function|this)
             (?!-\p{L}|[\p{L}\d$_])
         </define-regex>
@@ -262,48 +275,59 @@
             <match>\%{conditional-keyword}</match>
         </context>
 
-        <context id="keywords" style-ref="keyword">
+        <context id="keyword" style-ref="keyword">
             <match>\%{keywords-keyword}|\%{value-keyword}</match>
+        </context>
+
+        <context id="label" style-ref="label">
+            <match>^\s*:\%{identifier}</match>
         </context>
 
         <context id="operator" style-ref="operator">
             <match>\%{operator-regex}</match>
         </context>
 
-        <context id="functions" style-ref="function">
+        <context id="delimiter" style-ref="delimiter">
+            <match>[[\](){},;]</match>
+        </context>
+
+        <context id="function" style-ref="function">
             <match extended="true">
-                ((?&lt;![\p{L}\d$_]-|[\p{L}\d$_])
-                 [\p{L}$_](-\p{L}|[\p{L}\d$_])*
-                 (?=\s*:?=?\s*(\(.+\))?\s*!?(--?|~~?)&gt;) |
-                 (?&lt;=function\s)[\p{L}$_](-\p{L}|[\p{L}\d$_])* )
+                (\%{identifier}
+                 (?=\s*(:|(and|or|&amp;&amp;|\|\||[:?])?=)\s*
+                 (\%{identifier}\s*(:|(and|or|&amp;&amp;|\|\||[:?])?=)\s*)* # Chained assignment
+                 # TODO improve the use of operators as functions (ie. check if unary)
+                 ((\(.+\))?\s*!?(--?|~~?)&gt; | function\s | \(\%{operator-regex}+)) |
+                 # XXX issue of fixed-length lookbehind
+                 (?&lt;=function\s) \%{identifier} )
             </match>
         </context>
 
-        <context id="constructors" style-ref="constructors">
+        <context id="constructor" style-ref="constructor">
             <match extended="true">
-                (?&lt;![\p{L}\d$_]-|[\p{L}\d$_])
+                ((?&lt;![\p{L}\d$_]-|[\p{L}\d$_])
                 [\p{Lu}][\p{L}0-9]+
-                (?!-\p{L}|[\p{L}\d$_\.])
+                (?!-\p{L}|[\p{L}\d$_]) |
+                (?&lt;=new\s|class\s|extends\s)\%{identifier})
             </match>
         </context>
 
         <context id="application" style-ref="application">
             <match extended="true">
-                ([\p{L}$_](-\p{L}|[\p{L}\d$_])* (
-                    (?=\s*\()                                 |   # Explicit braced call
-                    (?=!)                                     |   # Explicit bang call
-                    (?=\s+!?(--?|~~?)&gt;)                    |   # Function as argument
-                    (?=\s+([!~]|(\+\+?|--?|^^)[\p{L}\d$_@]))  |   # Unary operators
-                    (?=\s+(@|\.\.\.))                         |   # This and yaddayaddayadda
-                    (?=\s+\S)                                     # Implicit arguments
-                    (?!\s+ (                                      # aka. anything but:
-                        \%{novalue-keywords}                  |   # Novalue keywords
-                        \%{operator-regex}                    |   # Operators
-                        [\])}#,;])                                # Delimiters
-                    )
-                 )                                            |
-                 (?&lt;=&lt;-\s)[\p{L}$_](-\p{L}|[\p{L}\d$_])*      # Back call
-                )
+                (\%{identifier}
+                 ((?=\s*\()                                 |   # Explicit braced call
+                  (?=!)                                     |   # Explicit bang call
+                  (?=\s+!?(--?|~~?)&gt;)                    |   # Function as argument
+                  (?=\s+([!~]|(\+\+?|--?|^^)[\p{L}\d$_@]))  |   # Unary operators
+                  (?=\s+(@|\.\.\.|&lt;\|))                  |   # This, splats and back pipe
+                  (?=\s+\S)                                     # Implicit arguments
+                  (?!\s+                                        # aka. anything but:
+                   (\%{novalue-keywords}                    |   # Novalue keywords
+                    \%{operator-regex}                      |   # Operators
+                    [\])}#,;])))                            |   # Delimiters
+                 # XXX issue of fixed-length lookbehind
+                 (?&lt;=(&lt;-|\|&gt;)\s) \%{identifier}    |   # Back call and pipe
+                 `\%{identifier}`)                              # Infix call
             </match>
         </context>
 
@@ -321,21 +345,24 @@
                 <context ref="backslash-string"/>
                 <context ref="string-javascript"/>
                 <context ref="words-list"/>
+                <context ref="octal"/>
+                <context ref="def:hexadecimal"/>
                 <context ref="float"/>
                 <context ref="decimal"/>
-                <context ref="def:octal"/>
-                <context ref="def:hexadecimal"/>
                 <context ref="global"/>
                 <context ref="constant"/>
                 <context ref="boolean"/>
                 <context ref="statement"/>
                 <context ref="loop"/>
                 <context ref="conditional"/>
-                <context ref="keywords"/>
+                <context ref="keyword"/>
+                <context ref="label"/>
                 <context ref="operator"/>
-                <context ref="functions"/>
-                <context ref="constructors"/>
+                <context ref="delimiter"/>
+                <context ref="function"/>
+                <context ref="constructor"/>
                 <context ref="application"/>
+                <context ref="def:line-continue"/>
             </include>
         </context>
     </definitions>
