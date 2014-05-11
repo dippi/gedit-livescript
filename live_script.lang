@@ -178,8 +178,8 @@
         <context id="float" style-ref="floating-point">
             <match extended="true">
                 (?&lt;![\p{L}\d$_])
-                (([1-9][0-9_]*|0_*) \. [0-9][0-9_]* [\p{L}$_]* |
-                [1-9][0-9_]* e [+-]? [0-9][0-9_]* [\p{L}$_]*)
+                (([1-9][0-9_]*|0_*) \. [0-9][0-9_]* ([\p{L}$][\p{L}\d$_]*|(?!\d)) |
+                 [1-9][0-9_]* e [+-]? [0-9][0-9_]* ([\p{L}$][\p{L}\d$_]*|(?!\d)) )
             </match>
         </context>
 
@@ -192,7 +192,6 @@
             <prefix>(?&lt;![\p{L}\d$_]-|[\p{L}\d$_])</prefix>
             <suffix>(?!-\p{L}|[\p{L}\d$_])</suffix>
             <keyword>void</keyword>
-            <keyword>undefined</keyword>
             <keyword>null</keyword>
             <keyword>NaN</keyword>
             <keyword>Infinity</keyword>
@@ -251,8 +250,7 @@
         </define-regex>
 
         <define-regex id="operator-regex" extended="true">
-            ( \.(&amp; | \|)\. | (?&lt;![\p{L}\d$_])- | -(?!\p{L}) |
-             \|\| | &amp;&amp; | &lt;\| | \|&gt; | [+*/^%?=&lt;&gt;!~:.@] )
+            ( (?&lt;![\p{L}\d$_])- | -(?!\p{L}) | [+*/^%?=&lt;&gt;!~:.@&amp;|] )
         </define-regex>
 
         <define-regex id="novalue-keywords" extended="true">
@@ -295,9 +293,9 @@
             <match extended="true">
                 (\%{identifier}
                  (?=\s*(:|(and|or|&amp;&amp;|\|\||[:?])?=)\s*
-                 (\%{identifier}\s*(:|(and|or|&amp;&amp;|\|\||[:?])?=)\s*)* # Chained assignment
+                 (\%{identifier}\s*((and|or|&amp;&amp;|\|\||[:?])?=)\s*)* # Chained assignment
                  # TODO improve the use of operators as functions (ie. check if unary)
-                 ((\(.+\))?\s*!?(--?|~~?)&gt; | function\s | \(\%{operator-regex}+)) |
+                 ((\(.+\))?\s*!?(--?|~~?)&gt; | (~!?|!~?)?\s*function\s | \(\%{operator-regex}+)) |
                  # XXX issue of fixed-length lookbehind
                  (?&lt;=function\s) \%{identifier} )
             </match>
@@ -324,7 +322,8 @@
                   (?!\s+                                        # aka. anything but:
                    (\%{novalue-keywords}                    |   # Novalue keywords
                     \%{operator-regex}                      |   # Operators
-                    [\])}#,;])))                            |   # Delimiters
+                    `\%{identifier}`						|	# An infix call
+                    [\])}#,;`])))                           |   # Delimiters
                  # XXX issue of fixed-length lookbehind
                  (?&lt;=(&lt;-|\|&gt;)\s) \%{identifier}    |   # Back call and pipe
                  `\%{identifier}`)                              # Infix call
