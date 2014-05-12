@@ -297,7 +297,7 @@
                  # TODO improve the use of operators as functions (ie. check if unary)
                  ((\(.+\))?\s*!?(--?|~~?)&gt; | (~!?|!~?)?\s*function\s | \(\%{operator-regex}+)) |
                  # XXX issue of fixed-length lookbehind
-                 (?&lt;=function\s) \%{identifier} )
+                 ((?&lt;=(\s|~|!)function)|(?&lt;=^function))\s+ \%{identifier} )
             </match>
         </context>
 
@@ -312,20 +312,23 @@
         <context id="application" style-ref="application">
             <match extended="true">
                 (\%{identifier}
-                 ((?=\s*\()                                 |   # Explicit braced call
-                  (?=!)                                     |   # Explicit bang call
-                  (?=\s+!?(--?|~~?)&gt;)                    |   # Function as argument
-                  (?=\s+([!~]|(\+\+?|--?|^^)[\p{L}\d$_@]))  |   # Unary operators
-                  (?=\s+(@|\.\.\.|&lt;\|))                  |   # This, splats and back pipe
-                  (?=\s+\S)                                     # Implicit arguments
-                  (?!\s+                                        # aka. anything but:
-                   (\%{novalue-keywords}                    |   # Novalue keywords
-                    \%{operator-regex}                      |   # Operators
-                    `\%{identifier}`						|	# An infix call
-                    [\])}#,;`])))                           |   # Delimiters
+                 ((?=\??\s*\()                              # Explicit braced call
+                 |(?=\??!)                                  # Explicit bang call
+                 |(?=\??\s+
+                   (!?(--?|~~?)&gt;                         # Function as argument
+                   |([!~]|(\+\+?|--?|^^)[\p{L}\d$_@])       # Unary operators
+                   |(@|\.\.\.|&lt;\|)))                     # This, splats and back pipe
+                 |(?=\??\s+\S)                              # Implicit arguments
+                  (?!\??\s+                                 # aka. anything but:
+                   (\%{novalue-keywords}                    # Novalue keywords
+                   |\%{operator-regex}                      # Operators
+                   |`\%{identifier}`                        # An infix call
+                   |[\])}#,;`])))                           # Delimiters
                  # XXX issue of fixed-length lookbehind
-                 (?&lt;=(&lt;-|\|&gt;)\s) \%{identifier}    |   # Back call and pipe
-                 `\%{identifier}`)                              # Infix call
+                |(?&lt;=&lt;-|&lt;--|&lt;-!|&lt;--!         # Back call and pipe
+                 |&lt;~|&lt;~~|&lt;~!|&lt;~~!|\|&gt;)
+                 \s+ \%{identifier}
+                |`\%{identifier}`)                          # Infix call
             </match>
         </context>
 
