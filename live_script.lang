@@ -297,7 +297,7 @@
                  # TODO improve the use of operators as functions (ie. check if unary)
                  ((\(.+\))?\s*!?(--?|~~?)&gt; | (~!?|!~?)?\s*function\s | \(\%{operator-regex}+)) |
                  # XXX issue of fixed-length lookbehind
-                 ((?&lt;=(\s|~|!)function)|(?&lt;=^function))\s+ \%{identifier} )
+                 ((?&lt;=(\s|~|!)function\s)|(?&lt;=^function\s)) \%{identifier} )
             </match>
         </context>
 
@@ -325,9 +325,9 @@
                    |`\%{identifier}`                        # An infix call
                    |[\])}#,;`])))                           # Delimiters
                  # XXX issue of fixed-length lookbehind
-                |(?&lt;=&lt;-|&lt;--|&lt;-!|&lt;--!         # Back call and pipe
-                 |&lt;~|&lt;~~|&lt;~!|&lt;~~!|\|&gt;)
-                 \s+ \%{identifier}
+                |(?&lt;=&lt;-\s|&lt;--\s|&lt;-!\s|&lt;--!\s     # Back call and pipe
+                 |&lt;~\s|&lt;~~\s|&lt;~!\s|&lt;~~!\s|\|&gt;\s)
+                 \%{identifier} (?!(\?|\??\s*\.)\%{identifier})
                 |`\%{identifier}`)                          # Infix call
             </match>
         </context>
