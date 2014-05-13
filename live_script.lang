@@ -317,7 +317,7 @@
                  |(?=\??\s+
                    (!?(--?|~~?)&gt;                         # Function as argument
                    |([!~]|(\+\+?|--?|^^)[\p{L}\d$_@])       # Unary operators
-                   |(@|\.\.\.|&lt;\|)))                     # This, splats and back pipe
+                   |(@|\.\.\.|&lt;[|[])))                   # This, splats, back pipe and list of words
                  |(?=\??\s+\S)                              # Implicit arguments
                   (?!\??\s+                                 # aka. anything but:
                    (\%{novalue-keywords}                    # Novalue keywords
